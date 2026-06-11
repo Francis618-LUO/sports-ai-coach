@@ -17,7 +17,8 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
   const [step, setStep] = useState<Step>('select');
   const [selectedPose, setSelectedPose] = useState<PoseOption | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const { detectPose, isLoading, error: poseError } = usePoseDetection();
+  const [analyzePhase, setAnalyzePhase] = useState<'pose' | 'ai'>('pose');
+  const { detectPose, error: poseError } = usePoseDetection();
 
   const sportEmoji = sport === 'tennis' ? '🎾' : '⛳';
   const sportName = sport === 'tennis' ? '网球' : '高尔夫';
@@ -46,19 +47,21 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
   const handleAnalyze = async () => {
     if (!capturedImage || !selectedPose) return;
     setStep('analyzing');
+    setAnalyzePhase('pose');
+
     const result = await detectPose(capturedImage);
 
     if (!result) {
-      setStep('preview'); // 回到预览页显示错误
+      setStep('preview'); // 回到预览页让用户看到错误信息并重试
       return;
     }
 
+    setAnalyzePhase('ai');
     try {
       const aiResult = await analyzePose(sport, selectedPose.id, result.angles);
       onComplete(result, aiResult);
     } catch (apiErr) {
       const msg = apiErr instanceof Error ? apiErr.message : 'AI分析失败';
-      // 即使AI分析失败，也传递姿态数据，让用户至少看到骨骼图
       const fallbackAI: AIAnalysisResult = {
         summary: `姿态检测已完成，但AI分析出错：${msg}。请检查API配置后重试。`,
         issues: [],
@@ -131,12 +134,23 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
         )}
 
         {step === 'analyzing' && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
-            <p className="text-slate-600 font-medium">
-              {isLoading ? '正在检测人体姿态...' : '处理中...'}
-            </p>
-            <p className="text-xs text-slate-400">使用MediaPipe Pose进行本地AI推理</p>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
+            <div className="w-14 h-14 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
+            <div className="text-center">
+              <p className="text-slate-700 font-semibold text-lg">
+                {analyzePhase === 'pose' ? '正在检测人体姿态...' : 'AI教练正在分析你的动作...'}
+              </p>
+              <p className="text-slate-400 text-sm mt-2">
+                {analyzePhase === 'pose'
+                  ? '使用 MediaPipe Pose 进行本地 AI 推理'
+                  : '通过 DeepSeek 大模型生成专业训练建议'}
+              </p>
+            </div>
+            {/* 进度指示器 */}
+            <div className="flex gap-2 mt-4">
+              <div className={`w-20 h-1.5 rounded-full transition-colors ${analyzePhase === 'pose' ? 'bg-slate-800' : 'bg-green-500'}`} />
+              <div className={`w-20 h-1.5 rounded-full transition-colors ${analyzePhase === 'ai' ? 'bg-slate-800 animate-pulse' : 'bg-slate-200'}`} />
+            </div>
           </div>
         )}
       </div>
