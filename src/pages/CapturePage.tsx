@@ -32,6 +32,10 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
 
   const handlePoseSelect = (pose: PoseOption) => {
     setSelectedPose(pose);
+    // 视频类动作自动切换到视频模式
+    if (pose.mode === 'video') {
+      setCaptureMode('video');
+    }
     setStep('capture');
   };
 

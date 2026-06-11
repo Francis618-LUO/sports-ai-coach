@@ -27,8 +27,18 @@ export interface PoseCategory {
 
 export const TENNIS_CATEGORIES: PoseCategory[] = [
   {
+    id: 'video_full',
+    name: '🎬 全挥拍视频分析',
+    icon: '🎥',
+    poses: [
+      { id: 'tennis_fh_full', name: '正手全挥拍（视频）', description: '完整正手挥拍：准备→引拍→击球→随挥，上传3-10秒视频', mode: 'video' },
+      { id: 'tennis_bh_full', name: '反手全挥拍（视频）', description: '完整反手挥拍：准备→引拍→击球→随挥，上传3-10秒视频', mode: 'video' },
+      { id: 'tennis_serve_full', name: '发球全流程（视频）', description: '完整发球动作：准备→托举→击球→落地，上传3-10秒视频', mode: 'video' },
+    ],
+  },
+  {
     id: 'grips',
-    name: '握拍方式',
+    name: '🤝 握拍方式（照片）',
     icon: '🤝',
     poses: [
       { id: 'tennis_grip_eastern', name: '东方式握拍', description: '食指根部对准拍面3号棱，适合平击球' },
@@ -39,7 +49,7 @@ export const TENNIS_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'serve',
-    name: '发球动作',
+    name: '🏐 发球分解（照片）',
     icon: '🏐',
     poses: [
       { id: 'tennis_serve_trophy', name: '发球托举姿势', description: 'Trophy Position，双臂上举，重心后移' },
@@ -49,7 +59,7 @@ export const TENNIS_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'forehand',
-    name: '正手击球',
+    name: '🎾 正手分解（照片）',
     icon: '🎾',
     poses: [
       { id: 'tennis_fh_ready', name: '正手准备姿势', description: '分腿垫步后的准备站位，拍头朝前' },
@@ -60,7 +70,7 @@ export const TENNIS_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'backhand',
-    name: '反手击球',
+    name: '💪 反手分解（照片）',
     icon: '💪',
     poses: [
       { id: 'tennis_bh_2h_ready', name: '双手反手准备', description: '双手握拍，转体侧身准备' },
@@ -71,7 +81,7 @@ export const TENNIS_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'volley',
-    name: '截击与网前',
+    name: '🏸 截击网前（照片）',
     icon: '🏸',
     poses: [
       { id: 'tennis_fh_volley', name: '正手截击', description: '网前正手截击准备姿势' },
@@ -82,8 +92,18 @@ export const TENNIS_CATEGORIES: PoseCategory[] = [
 
 export const GOLF_CATEGORIES: PoseCategory[] = [
   {
+    id: 'video_full',
+    name: '🎬 全挥杆视频分析',
+    icon: '🎥',
+    poses: [
+      { id: 'golf_full_swing', name: '全挥杆分析（视频）', description: '完整挥杆：站位→上杆→顶点→下杆→击球→收杆，上传3-10秒视频', mode: 'video' },
+      { id: 'golf_putting_stroke', name: '推杆分析（视频）', description: '完整推杆动作：准备→上杆→击球→送杆，上传3-10秒视频', mode: 'video' },
+      { id: 'golf_chipping_stroke', name: '切杆分析（视频）', description: '完整切杆动作：准备→上杆→击球→送杆，上传3-10秒视频', mode: 'video' },
+    ],
+  },
+  {
     id: 'grip',
-    name: '握杆方式',
+    name: '🤝 握杆方式（照片）',
     icon: '🤝',
     poses: [
       { id: 'golf_grip_overlap', name: '重叠式握杆', description: 'Vardon/Overlap Grip，最常用的握杆方式' },
@@ -93,7 +113,7 @@ export const GOLF_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'full_swing',
-    name: '全挥杆',
+    name: '🏌️ 全挥杆分解（照片）',
     icon: '🏌️',
     poses: [
       { id: 'golf_setup', name: '站位准备', description: 'Address姿势，脊柱前倾，膝盖微屈' },
@@ -105,7 +125,7 @@ export const GOLF_CATEGORIES: PoseCategory[] = [
   },
   {
     id: 'short_game',
-    name: '短杆技术',
+    name: '⛳ 短杆分解（照片）',
     icon: '⛳',
     poses: [
       { id: 'golf_chipping', name: '切杆站位', description: 'Chipping准备，重心前移，手腕稳定' },

@@ -4,6 +4,7 @@ export interface PoseOption {
   id: string;
   name: string;
   description: string;
+  mode?: 'photo' | 'video'; // 默认photo，video表示需要上传视频分析
 }
 
 export interface JointAngle {

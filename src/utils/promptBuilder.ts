@@ -1,6 +1,10 @@
 import type { SportType, JointAngle } from '../types';
 
 const POSE_NAME_MAP: Record<string, string> = {
+  // Tennis - Video
+  tennis_fh_full: '正手全挥拍（完整连续动作）',
+  tennis_bh_full: '反手全挥拍（完整连续动作）',
+  tennis_serve_full: '发球全流程（完整连续动作）',
   // Tennis - Grips
   tennis_grip_eastern: '东方式握拍',
   tennis_grip_semiwestern: '半西方式握拍',
@@ -23,6 +27,10 @@ const POSE_NAME_MAP: Record<string, string> = {
   // Tennis - Volley
   tennis_fh_volley: '正手截击',
   tennis_bh_volley: '反手截击',
+  // Golf - Video
+  golf_full_swing: '全挥杆（完整连续动作：站位→上杆→下杆→收杆）',
+  golf_putting_stroke: '推杆（完整连续动作）',
+  golf_chipping_stroke: '切杆（完整连续动作）',
   // Golf - Grip
   golf_grip_overlap: '重叠式握杆（Vardon Grip）',
   golf_grip_interlock: '互锁式握杆（Interlocking Grip）',
