@@ -89,6 +89,8 @@ export function usePoseDetection() {
       setError('');
 
       try {
+        // 每次新视频先重置追踪器，避免上一段视频的追踪状态干扰
+        resetVideoLandmarker();
         const lm = await initVideoLandmarker();
         const results: Array<{ landmarks: PoseAnalysis['landmarks']; image: string } | null> = [];
 
@@ -153,5 +155,13 @@ export function usePoseDetection() {
     []
   );
 
-  return { detectPose, detectPoseBatch, isLoading, error };
+  /** 重置视频追踪器（每次分析新视频前调用，清除上一段的追踪状态） */
+  const resetVideoLandmarker = useCallback(() => {
+    if (videoLandmarker) {
+      videoLandmarker.close();
+      videoLandmarker = null;
+    }
+  }, []);
+
+  return { detectPose, detectPoseBatch, resetVideoLandmarker, isLoading, error };
 }
