@@ -6,6 +6,8 @@ import { TrainingPlan } from '../components/TrainingPlan';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { AngleDashboard } from '../components/AngleDashboard';
 import { calculateScore } from '../utils/angleCalculator';
+import { SkeletonDemo } from '../components/SkeletonDemo';
+import { IDEAL_SKELETONS } from '../utils/idealPoses';
 
 interface Props {
   sport: SportType;
@@ -110,6 +112,46 @@ export function ResultPage({ sport, analysis, aiResult, onBack, onSave }: Props)
             })}
           </div>
         </div>
+
+        {/* Skeleton Comparison: You vs Ideal */}
+        {analysis.poseTypeId && IDEAL_SKELETONS[analysis.poseTypeId] && (
+          <div className="p-4 bg-white border-b">
+            <h3 className="font-bold text-slate-800 text-sm mb-3 text-center">
+              🦴 你的骨架 vs 标准骨架
+            </h3>
+            <div className="flex gap-4 justify-center">
+              {/* 用户骨架 */}
+              <div className="text-center">
+                <div className="w-[120px] h-[180px] bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
+                  <SkeletonDemo
+                    skeleton={analysis.landmarks.map((l) => ({ x: l.x, y: l.y }))}
+                    width={120}
+                    height={180}
+                    animate={false}
+                  />
+                </div>
+                <span className="text-xs text-slate-500 mt-1 block">你的动作</span>
+              </div>
+              {/* VS */}
+              <div className="flex items-center">
+                <span className="text-slate-300 font-bold text-lg">VS</span>
+              </div>
+              {/* 理想骨架 */}
+              <div className="text-center">
+                <div className="w-[120px] h-[180px] bg-indigo-50 rounded-xl flex items-center justify-center overflow-hidden border border-indigo-100">
+                  <SkeletonDemo
+                    skeleton={IDEAL_SKELETONS[analysis.poseTypeId]}
+                    width={120}
+                    height={180}
+                    animate
+                    label=""
+                  />
+                </div>
+                <span className="text-xs text-indigo-500 font-medium mt-1 block">标准参考</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Detailed Content */}
         <div className="p-4 space-y-6">

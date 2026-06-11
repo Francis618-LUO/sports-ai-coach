@@ -61,6 +61,7 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
       setStep('preview');
       return;
     }
+    poseResult.poseTypeId = selectedPose.id;
 
     // 计算基础评分
     const score = calculateScore(poseResult.angles);

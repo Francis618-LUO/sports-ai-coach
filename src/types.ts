@@ -17,6 +17,7 @@ export interface PoseAnalysis {
   landmarks: Array<{ x: number; y: number; z: number; visibility: number }>;
   angles: JointAngle[];
   imageBase64: string;
+  poseTypeId?: string;
 }
 
 export interface AIAnalysisResult {
