@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { SportType, PoseOption, PoseAnalysis, AIAnalysisResult } from '../types';
 import { PoseSelector } from '../components/PoseSelector';
 import { CameraCapture } from '../components/CameraCapture';
@@ -25,6 +25,7 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analyzePhase, setAnalyzePhase] = useState<'pose' | 'ai'>('pose');
   const [motionFrames, setMotionFrames] = useState<Array<{ image: string; landmarks: Array<{ x: number; y: number; visibility: number }> }>>([]);
+  const analyzingRef = useRef(false);
   const { detectPose, detectPoseBatch, error: poseError } = usePoseDetection();
 
   const sportEmoji = sport === 'tennis' ? '🎾' : '⛳';
@@ -65,17 +66,22 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
   };
 
   // ─── 视频模式：接收视频 → 抽帧 → 批量检测 ───
-  const handleVideoReady = async (videoBlob: Blob) => {
+  const handleVideoReady = useCallback(async (videoBlob: Blob) => {
+    // 防重入锁：避免状态更新导致组件重渲染后 effect 二次触发
+    if (analyzingRef.current) return;
+    analyzingRef.current = true;
+
     setStep('analyzing');
     setAnalyzePhase('pose');
 
     try {
-      const durationEstimate = 3; // 保守估计
+      const durationEstimate = 3;
       const frameCount = smartFrameCount(durationEstimate);
       const frames = await extractFrames(videoBlob, frameCount);
 
       if (frames.length < 2) {
         setStep('capture');
+        analyzingRef.current = false;
         return;
       }
 
@@ -86,13 +92,13 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
 
       if (validFrames.length < 2) {
         setStep('capture');
+        analyzingRef.current = false;
         return;
       }
 
       setMotionFrames(validFrames);
       setStep('motion_preview');
 
-      // 用第一帧的角度做AI分析
       const firstFrame = validFrames[0];
       const angles = extractJointAngles(firstFrame.landmarks);
       const score = calculateScore(angles);
@@ -115,6 +121,7 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
           poseTypeId: selectedPose!.id,
           motionFrames: validFrames,
         };
+        analyzingRef.current = false;
         onComplete(poseData, aiResult);
       } catch {
         const fallbackAI: AIAnalysisResult = {
@@ -124,18 +131,19 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
           exercises: [],
         };
         const poseData: PoseAnalysis = {
-          landmarks: firstFrame.landmarks,
-          angles,
+          landmarks: firstFrame.landmarks, angles,
           imageBase64: firstFrame.image,
           poseTypeId: selectedPose!.id,
           motionFrames: validFrames,
         };
+        analyzingRef.current = false;
         onComplete(poseData, fallbackAI);
       }
     } catch {
+      analyzingRef.current = false;
       setStep('capture');
     }
-  };
+  }, [sport, selectedPose, onComplete, detectPoseBatch]);
 
   const handleAnalyze = async () => {
     if (!capturedImage || !selectedPose) return;
