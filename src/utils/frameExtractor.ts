@@ -21,11 +21,8 @@ export async function extractFrames(videoBlob: Blob, frameCount: number): Promis
     return [];
   }
 
-  // 跳过首尾各10%，取中间80%
-  const startTime = duration * 0.1;
-  const endTime = duration * 0.9;
-  const usableDuration = endTime - startTime;
-  const interval = usableDuration / (frameCount - 1);
+  // 取整个视频，均匀分布
+  const interval = duration / (frameCount - 1);
 
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth || 640;
@@ -35,7 +32,7 @@ export async function extractFrames(videoBlob: Blob, frameCount: number): Promis
   const frames: string[] = [];
 
   for (let i = 0; i < frameCount; i++) {
-    const time = startTime + interval * i;
+    const time = interval * i;
     video.currentTime = time;
 
     await new Promise<void>((resolve) => {
@@ -55,8 +52,7 @@ export async function extractFrames(videoBlob: Blob, frameCount: number): Promis
 
 /** 智能帧数：根据视频时长决定抽几帧 */
 export function smartFrameCount(durationSeconds: number): number {
-  if (durationSeconds <= 1.5) return 4;
-  if (durationSeconds <= 3) return 6;
-  if (durationSeconds <= 5) return 8;
-  return 10;
+  // 目标帧率约 5fps，至少15帧，最多30帧
+  const target = Math.round(durationSeconds * 5);
+  return Math.max(15, Math.min(30, target));
 }

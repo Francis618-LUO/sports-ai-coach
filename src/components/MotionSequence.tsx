@@ -211,6 +211,27 @@ export function MotionSequence({ frames }: Props) {
         </div>
       </div>
 
+      {/* 帧缩略图对照条 */}
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {validFrames.map((f, i) => (
+          <div
+            key={i}
+            className={`flex-shrink-0 relative rounded-md overflow-hidden border-2 transition-colors ${
+              i === currentFrame ? 'border-green-400 shadow-sm' : 'border-slate-200 opacity-60'
+            }`}
+            style={{ width: 42, height: 56 }}
+          >
+            <img src={f.image} alt={`帧${i + 1}`} className="w-full h-full object-cover" />
+            <span className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-1 rounded-tl">
+              {i + 1}
+            </span>
+          </div>
+        ))}
+        <div className="flex-shrink-0 flex items-center text-xs text-slate-400 pl-1">
+          {totalFrames}帧
+        </div>
+      </div>
+
       {/* 控制条 */}
       <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-2 px-3">
         <button
