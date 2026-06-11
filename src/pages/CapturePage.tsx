@@ -3,6 +3,7 @@ import type { SportType, PoseOption, PoseAnalysis, AIAnalysisResult } from '../t
 import { PoseSelector } from '../components/PoseSelector';
 import { CameraCapture } from '../components/CameraCapture';
 import { usePoseDetection } from '../hooks/usePoseDetection';
+import { analyzePose } from '../services/api';
 
 interface Props {
   sport: SportType;
@@ -52,13 +53,19 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
       return;
     }
 
-    // Task 7 will add the API call here, for now pass through with mock AI data
-    const placeholderAI: AIAnalysisResult = {
-      summary: '姿态检测完成！AI分析功能将在集成DeepSeek API后启用。当前已成功提取关节角度数据。',
-      issues: [],
-      exercises: [],
-    };
-    onComplete(result, placeholderAI);
+    try {
+      const aiResult = await analyzePose(sport, selectedPose.id, result.angles);
+      onComplete(result, aiResult);
+    } catch (apiErr) {
+      const msg = apiErr instanceof Error ? apiErr.message : 'AI分析失败';
+      // 即使AI分析失败，也传递姿态数据，让用户至少看到骨骼图
+      const fallbackAI: AIAnalysisResult = {
+        summary: `姿态检测已完成，但AI分析出错：${msg}。请检查API配置后重试。`,
+        issues: [],
+        exercises: [],
+      };
+      onComplete(result, fallbackAI);
+    }
   };
 
   return (
