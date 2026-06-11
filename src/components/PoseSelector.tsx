@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import type { SportType, PoseOption } from '../types';
 import { TENNIS_CATEGORIES, GOLF_CATEGORIES } from '../utils/poseConnections';
-import { SkeletonDemo } from './SkeletonDemo';
-import { IDEAL_SKELETONS } from '../utils/idealPoses';
 
 interface Props {
   sport: SportType;
@@ -99,23 +97,6 @@ export function PoseSelector({ sport, selected, onSelect }: Props) {
         })}
       </div>
 
-      {/* 骨架模型预览 */}
-      {selected && IDEAL_SKELETONS[selected] && (
-        <div className="mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-          <p className="text-xs text-indigo-500 font-medium mb-2 text-center">
-            💡 标准动作参考（动态演示）
-          </p>
-          <div className="flex justify-center">
-            <SkeletonDemo
-              skeleton={IDEAL_SKELETONS[selected]}
-              width={140}
-              height={200}
-              animate
-              label="理想姿态"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
