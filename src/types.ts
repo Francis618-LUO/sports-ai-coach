@@ -18,6 +18,10 @@ export interface PoseAnalysis {
   angles: JointAngle[];
   imageBase64: string;
   poseTypeId?: string;
+  motionFrames?: Array<{
+    image: string;
+    landmarks: Array<{ x: number; y: number; visibility: number }>;
+  }>;
 }
 
 export interface AIAnalysisResult {

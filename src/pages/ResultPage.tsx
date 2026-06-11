@@ -6,6 +6,7 @@ import { TrainingPlan } from '../components/TrainingPlan';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { AngleDashboard } from '../components/AngleDashboard';
 import { calculateScore } from '../utils/angleCalculator';
+import { MotionSequence } from '../components/MotionSequence';
 
 interface Props {
   sport: SportType;
@@ -110,6 +111,13 @@ export function ResultPage({ sport, analysis, aiResult, onBack, onSave }: Props)
             })}
           </div>
         </div>
+
+        {/* Motion Sequence (if video mode) */}
+        {analysis.motionFrames && analysis.motionFrames.length > 0 && (
+          <div className="px-4 py-4 bg-white border-b">
+            <MotionSequence frames={analysis.motionFrames} />
+          </div>
+        )}
 
         {/* Detailed Content */}
         <div className="p-4 space-y-6">

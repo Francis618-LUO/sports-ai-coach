@@ -2,9 +2,12 @@ import { useState } from 'react';
 import type { SportType, PoseOption, PoseAnalysis, AIAnalysisResult } from '../types';
 import { PoseSelector } from '../components/PoseSelector';
 import { CameraCapture } from '../components/CameraCapture';
+import { VideoCapture } from '../components/VideoCapture';
+import { MotionSequence } from '../components/MotionSequence';
 import { usePoseDetection } from '../hooks/usePoseDetection';
 import { analyzePose } from '../services/api';
-import { calculateScore } from '../utils/angleCalculator';
+import { calculateScore, extractJointAngles } from '../utils/angleCalculator';
+import { extractFrames, smartFrameCount } from '../utils/frameExtractor';
 
 interface Props {
   sport: SportType;
@@ -12,14 +15,17 @@ interface Props {
   onBack: () => void;
 }
 
-type Step = 'select' | 'capture' | 'preview' | 'analyzing';
+type Step = 'select' | 'capture' | 'preview' | 'analyzing' | 'motion_preview';
+type CaptureMode = 'photo' | 'video';
 
 export function CapturePage({ sport, onComplete, onBack }: Props) {
   const [step, setStep] = useState<Step>('select');
+  const [captureMode, setCaptureMode] = useState<CaptureMode>('photo');
   const [selectedPose, setSelectedPose] = useState<PoseOption | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analyzePhase, setAnalyzePhase] = useState<'pose' | 'ai'>('pose');
-  const { detectPose, error: poseError } = usePoseDetection();
+  const [motionFrames, setMotionFrames] = useState<Array<{ image: string; landmarks: Array<{ x: number; y: number; visibility: number }> }>>([]);
+  const { detectPose, detectPoseBatch, error: poseError } = usePoseDetection();
 
   const sportEmoji = sport === 'tennis' ? '🎾' : '⛳';
   const sportName = sport === 'tennis' ? '网球' : '高尔夫';
@@ -45,8 +51,84 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
     } else if (step === 'capture') {
       setSelectedPose(null);
       setStep('select');
+    } else if (step === 'motion_preview') {
+      setMotionFrames([]);
+      setStep('capture');
     } else {
       setCapturedImage(null);
+      setStep('capture');
+    }
+  };
+
+  // ─── 视频模式：接收视频 → 抽帧 → 批量检测 ───
+  const handleVideoReady = async (videoBlob: Blob) => {
+    setStep('analyzing');
+    setAnalyzePhase('pose');
+
+    try {
+      const durationEstimate = 3; // 保守估计
+      const frameCount = smartFrameCount(durationEstimate);
+      const frames = await extractFrames(videoBlob, frameCount);
+
+      if (frames.length < 2) {
+        setStep('capture');
+        return;
+      }
+
+      const results = await detectPoseBatch(frames);
+      const validFrames = results
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .map((r) => ({ image: r.image, landmarks: r.landmarks }));
+
+      if (validFrames.length < 2) {
+        setStep('capture');
+        return;
+      }
+
+      setMotionFrames(validFrames);
+      setStep('motion_preview');
+
+      // 用第一帧的角度做AI分析
+      const firstFrame = validFrames[0];
+      const angles = extractJointAngles(firstFrame.landmarks);
+      const score = calculateScore(angles);
+
+      setAnalyzePhase('ai');
+      try {
+        const aiResult = await analyzePose(sport, selectedPose!.id, angles);
+        if (!aiResult.overallScore) aiResult.overallScore = score.totalScore;
+        const poseData: PoseAnalysis = {
+          landmarks: firstFrame.landmarks,
+          angles: angles.map((a, idx) => {
+            const scored = score.angleScores[idx];
+            if (scored) {
+              a.status = scored.score >= 90 ? 'normal' : scored.score >= 60 ? 'warning' : 'issue';
+              a.deviation = Math.round(Math.abs(a.value - (scored.idealMin + scored.idealMax) / 2));
+            }
+            return a;
+          }),
+          imageBase64: firstFrame.image,
+          poseTypeId: selectedPose!.id,
+          motionFrames: validFrames,
+        };
+        onComplete(poseData, aiResult);
+      } catch {
+        const fallbackAI: AIAnalysisResult = {
+          overallScore: score.totalScore,
+          summary: `动作视频分析完成！捕捉到 ${validFrames.length} 帧有效姿态。综合评分：${score.totalScore}分。`,
+          issues: [],
+          exercises: [],
+        };
+        const poseData: PoseAnalysis = {
+          landmarks: firstFrame.landmarks,
+          angles,
+          imageBase64: firstFrame.image,
+          poseTypeId: selectedPose!.id,
+          motionFrames: validFrames,
+        };
+        onComplete(poseData, fallbackAI);
+      }
+    } catch {
       setStep('capture');
     }
   };
@@ -150,11 +232,57 @@ export function CapturePage({ sport, onComplete, onBack }: Props) {
                 ✓ {selectedPose.name}
               </span>
               <p className="text-xs text-slate-500 mt-2">{selectedPose.description}</p>
-              <p className="text-xs text-slate-400 mt-1">请保持全身入镜，光线充足</p>
             </div>
-            <CameraCapture onPhotoReady={handlePhotoReady} />
+
+            {/* 照片/视频模式切换 */}
+            <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+              <button
+                onClick={() => setCaptureMode('photo')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  captureMode === 'photo' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                📷 照片
+              </button>
+              <button
+                onClick={() => setCaptureMode('video')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  captureMode === 'video' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                🎬 视频
+              </button>
+            </div>
+
+            {captureMode === 'photo' ? (
+              <CameraCapture onPhotoReady={handlePhotoReady} />
+            ) : (
+              <VideoCapture onVideoReady={handleVideoReady} />
+            )}
+
             <button onClick={handleBackFromCapture} className="text-sm text-slate-400 text-center w-full">
               重新选择动作
+            </button>
+          </div>
+        )}
+
+        {step === 'motion_preview' && motionFrames.length > 0 && (
+          <div className="space-y-4">
+            <div className="text-center">
+              <span className="inline-block px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium border border-purple-200">
+                🎬 {selectedPose?.name}
+              </span>
+              <p className="text-xs text-slate-400 mt-1">动作轨迹分析</p>
+            </div>
+            <MotionSequence frames={motionFrames} />
+            <button
+              onClick={() => {
+                setMotionFrames([]);
+                setStep('capture');
+              }}
+              className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-medium active:bg-slate-200"
+            >
+              🔄 重新录制
             </button>
           </div>
         )}

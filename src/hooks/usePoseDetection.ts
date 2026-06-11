@@ -75,5 +75,51 @@ export function usePoseDetection() {
     []
   );
 
-  return { detectPose, isLoading, error };
+  /** 批量检测多帧（视频逐帧分析） */
+  const detectPoseBatch = useCallback(
+    async (frames: string[]): Promise<Array<{ landmarks: PoseAnalysis['landmarks']; image: string } | null>> => {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const landmarker = await initPoseLandmarker();
+        const results: Array<{ landmarks: PoseAnalysis['landmarks']; image: string } | null> = [];
+
+        for (const frame of frames) {
+          try {
+            const img = new Image();
+            await new Promise<void>((resolve, reject) => {
+              img.onload = () => resolve();
+              img.onerror = () => reject(new Error('帧加载失败'));
+              img.src = frame;
+            });
+
+            const result = landmarker.detect(img);
+            if (result.landmarks && result.landmarks.length > 0) {
+              results.push({
+                landmarks: result.landmarks[0].map((l) => ({
+                  x: l.x, y: l.y, z: l.z, visibility: l.visibility ?? 0,
+                })),
+                image: frame,
+              });
+            } else {
+              results.push(null);
+            }
+          } catch {
+            results.push(null);
+          }
+        }
+
+        setIsLoading(false);
+        return results;
+      } catch (e) {
+        setError('批量姿态检测失败');
+        setIsLoading(false);
+        return [];
+      }
+    },
+    []
+  );
+
+  return { detectPose, detectPoseBatch, isLoading, error };
 }
