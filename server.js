@@ -2,6 +2,7 @@
 // 使用方式: node server.js (在另一个终端运行)
 // Vite 会将 /api/* 请求代理到此服务器
 
+import 'dotenv/config';
 import express from 'express';
 
 const app = express();
