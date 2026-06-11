@@ -70,9 +70,10 @@ export function MotionSequence({ frames }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bgImgRef = useRef<HTMLImageElement | null>(null);
   const animRef = useRef<number>(0);
-  const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState(1);
+  const [playing, setPlaying] = useState(false); // 默认不自动播放
+  const [speed, setSpeed] = useState(0.5);         // 默认慢放 0.5x
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [playedOnce, setPlayedOnce] = useState(false);
   const tRef = useRef(0);
 
   const validFrames = frames.filter((f) => f.landmarks.length > 0);
@@ -144,6 +145,18 @@ export function MotionSequence({ frames }: Props) {
     setCurrentFrame(Math.floor(rawT) % totalFrames);
   }, [validFrames, totalFrames]);
 
+  // 帧加载完成后自动播放一次
+  useEffect(() => {
+    if (totalFrames >= 2 && !playedOnce) {
+      const timer = setTimeout(() => {
+        tRef.current = 0;
+        setCurrentFrame(0);
+        setPlaying(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [totalFrames]); // eslint-disable-line
+
   // 动画循环
   useEffect(() => {
     if (!playing || totalFrames < 2) return;
@@ -157,7 +170,15 @@ export function MotionSequence({ frames }: Props) {
       last = now;
 
       tRef.current += dt * fps;
-      if (tRef.current >= totalFrames) tRef.current -= totalFrames;
+
+      // 放完一遍自动停止
+      if (tRef.current >= totalFrames) {
+        tRef.current = totalFrames - 0.01;
+        setPlaying(false);
+        setPlayedOnce(true);
+        animate();
+        return;
+      }
 
       animate();
       animRef.current = requestAnimationFrame(loop);
@@ -266,12 +287,17 @@ export function MotionSequence({ frames }: Props) {
           ))}
         </div>
 
-        {/* 循环 */}
+        {/* 重播 */}
         <button
-          onClick={() => setPlaying(true)}
+          onClick={() => {
+            tRef.current = 0;
+            setCurrentFrame(0);
+            setPlayedOnce(false);
+            setPlaying(true);
+          }}
           className="text-xs px-2 py-1 bg-white rounded-md border border-slate-200 text-slate-500 active:bg-slate-100"
         >
-          ↺ 重播
+          {playedOnce ? '🔄 重播' : '▶ 播放'}
         </button>
       </div>
 
