@@ -1,7 +1,6 @@
 Page({
   data: {
-    // 替换为你的 Vercel 部署地址
-    webUrl: 'https://YOUR-PROJECT.vercel.app'
+    webUrl: 'https://francis618-luo.github.io/sports-ai-coach/'
   },
 
   onWebLoad() {
