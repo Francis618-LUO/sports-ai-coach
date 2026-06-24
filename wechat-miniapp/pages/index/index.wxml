@@ -1,0 +1,2 @@
+<!-- 全屏加载 Web 应用 -->
+<web-view src="{{webUrl}}" bindload="onWebLoad" binderror="onWebError" />
